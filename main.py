@@ -29,6 +29,7 @@ bot = commands.Bot(
 COGS = [
     'cogs.nuke',
     'cogs.spam',
+    'cogs.moderation',
     'cogs.utility'
 ]
 
@@ -41,21 +42,46 @@ async def load_cogs():
         except Exception as e:
             print(f"✗ Failed to load {cog}: {e}")
 
+def print_big_banner():
+    """Print the big ALPHA SELFBOT banner"""
+    banner = """
+    
+    ███████████████████████████████████████████████████████████████████████████████
+    █                                                                             █
+    █    ╔═══════════════════════════════════════════════════════════════════╗  █
+    █    ║                                                                   ║  █
+    █    ║              █████╗ ██╗     ██████╗ ██╗  ██╗ █████╗              ║  █
+    █    ║             ██╔══██╗██║     ██╔══██╗██║  ██║██╔══██╗             ║  █
+    █    ║             ███████║██║     ██████╔╝███████║███████║             ║  █
+    █    ║             ██╔══██║██║     ██╔═══╝ ██╔══██║██╔══██║             ║  █
+    █    ║             ██║  ██║███████╗██║     ██║  ██║██║  ██║             ║  █
+    █    ║             ╚═╝  ╚═╝╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝             ║  █
+    █    ║                                                                   ║  █
+    █    ║                    🔥 SELFBOT - NUKE EDITION 🔥                  ║  █
+    █    ║                                                                   ║  █
+    █    ║                  ⚡ MAXIMUM SPEED • NO DELAYS ⚡                  ║  █
+    █    ║                                                                   ║  █
+    █    ╚═══════════════════════════════════════════════════════════════════╝  █
+    █                                                                             █
+    ███████████████████████████████████████████████████████████████████████████████
+    """
+    print(banner)
+
 @bot.event
 async def on_ready():
     """Bot ready event"""
-    print("\n" + "="*60)
-    print(f"╔════════════════════════════════════════════════════════╗")
-    print(f"║                                                        ║")
-    print(f"║          🚀 ALPHA SELFBOT - ONLINE 🚀                 ║")
-    print(f"║                                                        ║")
-    print(f"║  Owner: {str(OWNER_ID):<46} ║")
-    print(f"║  Prefix: {PREFIX:<45} ║")
-    print(f"║  Status: READY                                         ║")
-    print(f"║  Invite: https://discord.gg/6s5ZSV4ZcB                ║")
-    print(f"║                                                        ║")
-    print(f"╚════════════════════════════════════════════════════════╝")
-    print("="*60 + "\n")
+    print_big_banner()
+    
+    print("\n" + "="*80)
+    print(f"{'STATUS':^80}")
+    print("="*80)
+    print(f"✓ Bot Online: {bot.user.name}#{bot.user.discriminator}")
+    print(f"✓ Owner ID: {OWNER_ID}")
+    print(f"✓ Prefix: {PREFIX}")
+    print(f"✓ Status: READY & ACTIVE")
+    print(f"✓ Invite: https://discord.gg/6s5ZSV4ZcB")
+    print(f"✓ Latency: {round(bot.latency * 1000)}ms")
+    print("="*80 + "\n")
     
     # Set bot bio/status
     try:
