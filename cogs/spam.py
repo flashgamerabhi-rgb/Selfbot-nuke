@@ -1,12 +1,12 @@
 """
 SPAM COMMANDS - Mass message sending
-All channels spam 10x each at MAXIMUM SPEED
+All commands run at maximum speed
+Owner only visibility
 """
 import discord
 from discord.ext import commands
 from config import OWNER_ID
 import asyncio
-import random
 
 class Spam(commands.Cog):
     def __init__(self, bot):
@@ -21,34 +21,39 @@ class Spam(commands.Cog):
     @commands.check(is_owner)
     async def spam_message(self, ctx, count: int, channel: discord.TextChannel, *, message: str):
         """
-        Spam message in a specific channel
+        Spam message in a specific channel - OWNER ONLY
         Usage: .spam <count> <#channel> <message>
         (MAXIMUM SPEED - NO DELAYS)
         """
         if self.is_spamming:
-            await ctx.send("⚠️ Spam already in progress")
+            msg = await ctx.send("⚠️ Spam in progress")
             return
 
         if count <= 0 or count > 5000:
-            await ctx.send("❌ Count must be between 1 and 5000")
+            msg = await ctx.send("❌ Count: 1-5000")
             return
 
         if not channel.permissions_for(ctx.guild.me).send_messages:
-            await ctx.send(f"❌ No permission in {channel.mention}")
+            msg = await ctx.send(f"❌ No permission in {channel.mention}")
             return
 
         if len(message) > 2000:
-            await ctx.send("❌ Message too long (max 2000)")
+            msg = await ctx.send("❌ Message too long (max 2000)")
             return
 
-        self.is_spamming = True
-        status_msg = await ctx.send(f"⚡ Spamming {count} messages in {channel.mention}...")
-        sent_count = 0
+        # Delete command message
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
-        # Send all messages simultaneously (max speed)
+        self.is_spamming = True
+        status_msg = await ctx.send(f"⚡ Spamming {count}x in {channel.mention}...")
+
+        # Send all messages simultaneously (MAXIMUM SPEED)
         tasks = []
         for i in range(count):
-            msg_content = f"{message} #{i+1}"
+            msg_content = f"{message}"
             tasks.append(self._send_message(channel, msg_content))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -62,6 +67,8 @@ class Spam(commands.Cog):
         embed.add_field(name="Channel", value=channel.mention)
         embed.add_field(name="Count", value=sent_count)
         embed.add_field(name="Speed", value="⚡ MAXIMUM")
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
+        
         await status_msg.edit(content=None, embed=embed)
 
         self.is_spamming = False
@@ -78,17 +85,23 @@ class Spam(commands.Cog):
     @commands.check(is_owner)
     async def spam_all_channels(self, ctx, count: int, *, message: str):
         """
-        Spam message in ALL channels
+        Spam message in ALL channels - OWNER ONLY
         Usage: .spamall <count> <message>
         (MAXIMUM SPEED - NO DELAYS)
         """
         if self.is_spamming:
-            await ctx.send("⚠️ Spam already in progress")
+            msg = await ctx.send("⚠️ Spam in progress")
             return
 
         if count <= 0 or count > 1000:
-            await ctx.send("❌ Count must be between 1 and 1000")
+            msg = await ctx.send("❌ Count: 1-1000")
             return
+
+        # Delete command message
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
         self.is_spamming = True
         status_msg = await ctx.send(f"⚡ Spamming {count}x in ALL channels...")
@@ -104,7 +117,7 @@ class Spam(commands.Cog):
             if channel.permissions_for(ctx.guild.me).send_messages:
                 channel_count += 1
                 for i in range(count):
-                    msg_content = f"{message} [{i+1}/{count}]"
+                    msg_content = f"{message}"
                     tasks.append(self._send_message(channel, msg_content))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -119,22 +132,29 @@ class Spam(commands.Cog):
         embed.add_field(name="Per Channel", value=count)
         embed.add_field(name="Total Messages", value=sent_count)
         embed.add_field(name="Speed", value="⚡ MAXIMUM")
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
+        
         await status_msg.edit(content=None, embed=embed)
 
         self.is_spamming = False
 
     @commands.command(name='multispam')
     @commands.check(is_owner)
-    async def multi_spam(self, ctx, count: int, *, message: str):
+    async def multi_spam(self, ctx, *, message: str):
         """
-        Spam message in ALL channels 10x each
+        Spam message in ALL channels 10x each - OWNER ONLY
         Usage: .multispam <message>
-        This spams each channel 10 times automatically
         (MAXIMUM SPEED - NO DELAYS)
         """
         if self.is_spamming:
-            await ctx.send("⚠️ Spam already in progress")
+            msg = await ctx.send("⚠️ Spam in progress")
             return
+
+        # Delete command message
+        try:
+            await ctx.message.delete()
+        except:
+            pass
 
         self.is_spamming = True
         times_per_channel = 10  # Fixed 10 times per channel
@@ -151,7 +171,7 @@ class Spam(commands.Cog):
             if channel.permissions_for(ctx.guild.me).send_messages:
                 channel_count += 1
                 for i in range(times_per_channel):
-                    msg_content = f"{message} [Ch: {channel.name}] [{i+1}/{times_per_channel}]"
+                    msg_content = f"{message}"
                     tasks.append(self._send_message(channel, msg_content))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -166,6 +186,8 @@ class Spam(commands.Cog):
         embed.add_field(name="Per Channel", value=times_per_channel)
         embed.add_field(name="Total Messages", value=sent_count)
         embed.add_field(name="Speed", value="⚡ MAXIMUM")
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
+        
         await status_msg.edit(content=None, embed=embed)
 
         self.is_spamming = False
@@ -173,20 +195,31 @@ class Spam(commands.Cog):
     @commands.command(name='purge')
     @commands.check(is_owner)
     async def purge_messages(self, ctx, amount: int = 10):
-        """Delete messages from current channel"""
+        """Delete messages from current channel - OWNER ONLY"""
         if not ctx.channel.permissions_for(ctx.guild.me).manage_messages:
-            await ctx.send("❌ No permission to manage messages")
+            msg = await ctx.send("❌ No permission to manage messages")
             return
 
         if amount <= 0 or amount > 100:
-            await ctx.send("❌ Amount must be between 1 and 100")
+            msg = await ctx.send("❌ Amount: 1-100")
             return
 
         try:
+            await ctx.message.delete()
+        except:
+            pass
+
+        try:
             deleted = await ctx.channel.purge(limit=amount)
-            await ctx.send(f"✓ Deleted {len(deleted)} messages", delete_after=5)
+            embed = discord.Embed(
+                title="✓ PURGED",
+                description=f"Deleted {len(deleted)} messages",
+                color=discord.Color.blue()
+            )
+            embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
+            msg = await ctx.send(embed=embed)
         except Exception as e:
-            await ctx.send(f"❌ Error: {e}")
+            msg = await ctx.send(f"❌ Error: {e}")
 
 async def setup(bot):
     await bot.add_cog(Spam(bot))
