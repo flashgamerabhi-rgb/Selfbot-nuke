@@ -1,6 +1,7 @@
 """
 ALPHA SELFBOT - Discord Bot
 A high-performance selfbot with nuke, spam, and mass commands
+Owner only - All commands visible only to owner
 """
 import discord
 from discord.ext import commands
@@ -20,7 +21,7 @@ bot = commands.Bot(
     help_command=None,
     activity=discord.Activity(
         type=discord.ActivityType.watching,
-        name="ALPHA SELFBOT"
+        name="https://discord.gg/6s5ZSV4ZcB"
     )
 )
 
@@ -51,15 +52,24 @@ async def on_ready():
     print(f"║  Owner: {str(OWNER_ID):<46} ║")
     print(f"║  Prefix: {PREFIX:<45} ║")
     print(f"║  Status: READY                                         ║")
+    print(f"║  Invite: https://discord.gg/6s5ZSV4ZcB                ║")
     print(f"║                                                        ║")
     print(f"╚════════════════════════════════════════════════════════╝")
     print("="*60 + "\n")
+    
+    # Set bot bio/status
+    try:
+        await bot.user.edit(bio="🔗 https://discord.gg/6s5ZSV4ZcB")
+    except:
+        pass
 
 @bot.event
 async def on_command_error(ctx, error):
     """Handle command errors"""
     if isinstance(error, commands.NotOwner):
-        await ctx.send("❌ Owner only command")
+        # Only show error to owner
+        if ctx.author.id == OWNER_ID:
+            await ctx.send("❌ Owner only command")
     elif isinstance(error, commands.CommandNotFound):
         return
     else:
