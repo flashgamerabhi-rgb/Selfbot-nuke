@@ -22,7 +22,7 @@ class Nuke(commands.Cog):
     async def show_help(self, ctx):
         """Show all commands - OWNER ONLY"""
         embed = discord.Embed(
-            title="🚀 ALPHA SELFBOT - COMMANDS (OWNER ONLY)",
+            title="🚀 ALPHA SELFBOT - COMMANDS",
             description="Secret commands - Owner access only",
             color=discord.Color.red()
         )
@@ -52,7 +52,7 @@ class Nuke(commands.Cog):
             embed.add_field(name=category, value=f"```\n{cmd_list}\n```", inline=False)
 
         embed.set_footer(text="⚡ MAXIMUM SPEED • NO DELAYS • OWNER ONLY")
-        await ctx.send(embed=embed, delete_after=30)
+        await ctx.send(embed=embed)
 
     @commands.command(name='nuke')
     @commands.check(is_owner)
@@ -63,14 +63,10 @@ class Nuke(commands.Cog):
         """
         if self.is_nuking:
             msg = await ctx.send("⚠️ Nuke in progress")
-            await asyncio.sleep(3)
-            await msg.delete()
             return
 
         if not ctx.guild.me.guild_permissions.manage_channels:
             msg = await ctx.send("❌ No manage channels permission")
-            await asyncio.sleep(3)
-            await msg.delete()
             return
 
         # Delete the command message immediately
@@ -87,31 +83,23 @@ class Nuke(commands.Cog):
         # Validate parameters
         if channel_count <= 0 or channel_count > 500:
             msg = await ctx.send("❌ Count: 1-500")
-            await asyncio.sleep(3)
-            await msg.delete()
             return
 
         if spam_count is None or spam_count <= 0 or spam_count > 100:
             msg = await ctx.send("❌ Spam: 1-100")
-            await asyncio.sleep(3)
-            await msg.delete()
             return
 
         if not message:
             msg = await ctx.send("❌ Message required")
-            await asyncio.sleep(3)
-            await msg.delete()
             return
 
         if len(message) > 2000:
             msg = await ctx.send("❌ Message too long")
-            await asyncio.sleep(3)
-            await msg.delete()
             return
 
         self.is_nuking = True
         
-        # Confirmation message (owner only, deletes after)
+        # Confirmation message (owner only)
         confirm_msg = await ctx.send(
             f"⚠️ **MASTER NUKE**\n"
             f"🗑️ Delete ALL channels\n"
@@ -155,25 +143,19 @@ class Nuke(commands.Cog):
         # STEP 3: Spam all channels (MAX SPEED - PARALLEL)
         spammed_count = await self._spam_all_channels_async(created_channels, spam_count, message)
         
-        # Final summary (deletes after 10 seconds)
+        # Final summary
         embed = discord.Embed(
             title="✅ MASTER NUKE COMPLETE",
-            description="All operations executed",
+            description="All operations executed at MAXIMUM SPEED",
             color=discord.Color.green()
         )
         embed.add_field(name="🗑️ Deleted", value=deleted_count, inline=True)
         embed.add_field(name="➕ Created", value=created_count, inline=True)
         embed.add_field(name="📢 Spammed", value=spammed_count, inline=True)
         embed.add_field(name="⚡ Speed", value="MAXIMUM", inline=False)
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
         
         await progress_msg.edit(content=None, embed=embed)
-        
-        # Auto delete after 10 seconds
-        await asyncio.sleep(10)
-        try:
-            await progress_msg.delete()
-        except:
-            pass
 
         self.is_nuking = False
 
@@ -202,16 +184,9 @@ class Nuke(commands.Cog):
             description=f"{deleted_count} channels",
             color=discord.Color.red()
         )
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
         
         final_msg = await ctx.send(embed=embed)
-        
-        # Auto delete
-        await asyncio.sleep(10)
-        try:
-            await msg.delete()
-            await final_msg.delete()
-        except:
-            pass
 
     async def _delete_all_channels_async(self, ctx):
         """Delete all channels asynchronously (NO DELAY)"""
@@ -291,14 +266,10 @@ class Nuke(commands.Cog):
 
         if not ctx.guild.me.guild_permissions.manage_channels:
             msg = await ctx.send("❌ No permission")
-            await asyncio.sleep(3)
-            await msg.delete()
             return
 
         if count <= 0 or count > 500:
             msg = await ctx.send("❌ Count: 1-500")
-            await asyncio.sleep(3)
-            await msg.delete()
             return
 
         status_msg = await ctx.send(f"⚡ Creating {count} channels...")
@@ -317,13 +288,9 @@ class Nuke(commands.Cog):
             description=f"{created_count}/{count} channels",
             color=discord.Color.green()
         )
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
         
         await status_msg.edit(embed=embed)
-        await asyncio.sleep(10)
-        try:
-            await status_msg.delete()
-        except:
-            pass
 
     @commands.command(name='create')
     @commands.check(is_owner)
@@ -347,14 +314,10 @@ class Nuke(commands.Cog):
         )
         embed.add_field(name="Username", value=owner.name)
         embed.add_field(name="ID", value=owner.id)
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
         embed.set_thumbnail(url=owner.avatar.url if owner.avatar else None)
         
-        msg = await ctx.send(embed=embed)
-        await asyncio.sleep(15)
-        try:
-            await msg.delete()
-        except:
-            pass
+        await ctx.send(embed=embed)
 
     @commands.command(name='serverinfo')
     @commands.check(is_owner)
@@ -373,15 +336,11 @@ class Nuke(commands.Cog):
         embed.add_field(name="ID", value=guild.id)
         embed.add_field(name="Members", value=guild.member_count)
         embed.add_field(name="Channels", value=len(guild.channels))
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)
         
-        msg = await ctx.send(embed=embed)
-        await asyncio.sleep(15)
-        try:
-            await msg.delete()
-        except:
-            pass
+        await ctx.send(embed=embed)
 
     @commands.command(name='ping')
     @commands.check(is_owner)
@@ -398,13 +357,9 @@ class Nuke(commands.Cog):
             description=f"{latency}ms",
             color=discord.Color.yellow()
         )
+        embed.add_field(name="🔗 Invite", value="https://discord.gg/6s5ZSV4ZcB", inline=False)
         
-        msg = await ctx.send(embed=embed)
-        await asyncio.sleep(5)
-        try:
-            await msg.delete()
-        except:
-            pass
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Nuke(bot))
